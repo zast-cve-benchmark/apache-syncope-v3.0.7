@@ -1,0 +1,65 @@
+# Apache Syncope 3.0.7 - Vulnerable deployment
+# Full deployment (Core, Console, Enduser) on PostgreSQL
+
+services:
+   db:
+     image: postgres:16
+     restart: always
+     environment:
+       POSTGRES_DB: syncope
+       POSTGRES_USER: syncope
+       POSTGRES_PASSWORD: syncope
+
+   syncope:
+     depends_on:
+       - db
+     image: apache/syncope:3.0.7
+     ports:
+       - "38082:8080"
+     restart: always
+     environment:
+       SPRING_PROFILES_ACTIVE: docker,postgresql
+       DB_URL: jdbc:postgresql://db:5432/syncope?stringtype=unspecified
+       DB_USER: syncope
+       DB_PASSWORD: syncope
+       DB_POOL_MAX: 20
+       DB_POOL_MIN: 5
+       OPENJPA_REMOTE_COMMIT: sjvm
+       KEYMASTER_ADDRESS: http://localhost:8080/syncope/rest/keymaster
+       KEYMASTER_USERNAME: admin
+       KEYMASTER_PASSWORD: password
+       SERVICE_DISCOVERY_ADDRESS: http://syncope:8080/syncope/rest/
+       ANONYMOUS_USER: anonymous
+       ANONYMOUS_KEY: anonymous
+
+   syncope-console:
+     depends_on:
+       - syncope
+     image: apache/syncope-console:3.0.7
+     ports:
+       - "38083:8080"
+     restart: always
+     environment:
+       SPRING_PROFILES_ACTIVE: docker
+       KEYMASTER_ADDRESS: http://syncope:8080/syncope/rest/keymaster
+       KEYMASTER_USERNAME: admin
+       KEYMASTER_PASSWORD: password
+       SERVICE_DISCOVERY_ADDRESS: http://syncope-console:8080/syncope-console/
+       ANONYMOUS_USER: anonymous
+       ANONYMOUS_KEY: anonymous
+
+   syncope-enduser:
+     depends_on:
+       - syncope
+     image: apache/syncope-enduser:3.0.7
+     ports:
+       - "38084:8080"
+     restart: always
+     environment:
+       SPRING_PROFILES_ACTIVE: docker
+       KEYMASTER_ADDRESS: http://syncope:8080/syncope/rest/keymaster
+       KEYMASTER_USERNAME: admin
+       KEYMASTER_PASSWORD: password
+       SERVICE_DISCOVERY_ADDRESS: http://syncope-enduser:8080/syncope-enduser/
+       ANONYMOUS_USER: anonymous
+       ANONYMOUS_KEY: anonymous
